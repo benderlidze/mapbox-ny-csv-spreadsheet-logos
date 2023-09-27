@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <title>Add an icon to the map</title>
+    <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no">
+    <link href="https://api.mapbox.com/mapbox-gl-js/v2.14.1/mapbox-gl.css" rel="stylesheet">
+    <script src="https://api.mapbox.com/mapbox-gl-js/v2.14.1/mapbox-gl.js"></script>
+    <!-- use xlsx.full.min.js from version 0.20.0 -->
+    <script lang="javascript" src="https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.full.min.js"></script>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+        }
+
+        #map {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            width: 100%;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="map"></div>
+
+    <script>
+        mapboxgl.accessToken = 'pk.eyJ1IjoidTEwaW50IiwiYSI6InQtMnZvTkEifQ.c8mhXquPE7_xoB3P4Ag8cA'
+        const map = new mapboxgl.Map({
+            container: 'map', // container ID
+            style: 'mapbox://styles/mapbox/light-v11', // style URL
+            zoom: 7, // starting zoom
+            center: { lng: -74.14264105024266, lat: 40.392563464923 }, // starting position
+            projection: "mercator"
+        });
+
+        map.on('load', async () => {
+            // Add a data source containing one point feature.
+            map.addSource('point', {
+                'type': 'geojson',
+                'data': {
+                    'type': 'FeatureCollection',
+                    'features': [
+                        {
+                            'type': 'Feature',
+                            'geometry': {
+                                'type': 'Point',
+                                'coordinates': [-77.4144, 25.0759]
+                            }
+                        }
+                    ]
+                }
+            });
+
+            map.addLayer({
+                'id': 'points',
+                'type': 'symbol',
+                'source': 'point', // reference the data source
+                'layout': {
+                    // These icons are a part of the Mapbox Light style.
+                    // To view all images available in a Mapbox style, open
+                    // the style in Mapbox Studio and click the "Images" tab.
+                    // To add a new image to the style at runtime see
+                    // https://docs.mapbox.com/mapbox-gl-js/example/add-image/
+                    'icon-image': ['get', 'image'],
+                    'icon-allow-overlap': true,
+                    'text-field': ['get', 'image'],
+                    'text-font': [
+                        'Open Sans Bold',
+                        'Arial Unicode MS Bold'
+                    ],
+                    'text-size': 11,
+                    'text-transform': 'uppercase',
+                    'text-letter-spacing': 0.05,
+                    'text-variable-anchor': ['left'],
+                    'text-offset': [2, 0],
+                    'text-allow-overlap': true
+                },
+                'paint': {
+                    'text-color': '#202',
+                    'text-halo-color': '#fff',
+                    'text-halo-width': 2
+                },
+            });
+
+
+            const files = [
+                { name: "Beatnic", xlsx: "Beatnic.xlsx", img: "beatnic.png" },
+                { name: "Bluestone Lane", xlsx: "Bluestone Lane.xlsx", img: "bluestone lane.jpg" },
+                { name: "Cava", xlsx: "Cava.xlsx", img: "cava.jpg" },
+                { name: "Equinox", xlsx: "Equinox.xlsx", img: "equinox.png" },
+                { name: "JnJ", xlsx: "JnJ.xlsx", img: "joe and juice.png" },
+                { name: "Just Salad", xlsx: "Just Salad.xlsx", img: "just salad.png" },
+                { name: "Naya", xlsx: "Naya.xlsx", img: "naya.png" },
+                { name: "Shake Shack", xlsx: "Shake Shack.xlsx", img: "shake shack.png" },
+                { name: "Sweetgreen", xlsx: "Sweetgreen.xlsx", img: "sweetgreen.png" },
+                { name: "Tacombi", xlsx: "Tacombi.xlsx", img: "tacombi.png" },
+                { name: "Taim", xlsx: "Taim.xlsx", img: "taim.png" },
+            ]
+
+            const promises = files.map(file => {
+                console.log('file.xlsx', file.xlsx);
+                return fetch("data/locations/" + file.xlsx) // Fixed the file path
+                    .then(response => {
+                        return response.arrayBuffer().then(data => {
+                            return { fileName: file.xlsx, data: data, name: file.name }; // Include the file name in the response object
+                        });
+                    });
+            });
+
+            Promise.all(promises)
+                .then(responses => {
+                    console.log('Workbooks', responses);
+                    const pinsArray = responses.map(response => {
+
+                        const workbook = XLSX.read(response.data);
+                        const sheetName = workbook.SheetNames[0];
+                        const worksheet = workbook.Sheets[sheetName];
+                        const jsonData = XLSX.utils.sheet_to_json(worksheet, { sheetStubs: true });
+                        console.log('JSON Data', jsonData);
+                        return {
+                            data: jsonData,
+                            name: response.name
+                        }
+                    })
+                    console.log('All JSON Data', pinsArray);
+
+                    const collection = pinsArray.map(pins => {
+                        console.log('pins', pins);
+                        return pins.data.map(el => {
+                            return {
+                                type: "Feature",
+                                geometry: {
+                                    type: "Point",
+                                    coordinates: [el.Longitude, el.Latitude]
+                                },
+                                properties: {
+                                    ...el.data,
+                                    image: pins.name,
+                                }
+                            }
+                        })
+                    }).flat(Infinity)
+
+                    console.log('collection', collection);
+                    const FeatureCollection = {
+                        type: "FeatureCollection",
+                        features: collection
+                    }
+                    map.getSource('point').setData(FeatureCollection);
+
+                })
+
+
+
+            // const response = await fetch("/data/locations/Beatnic.xlsx");
+            // const workbook = XLSX.read(await response.arrayBuffer());
+            // const sheetName = workbook.SheetNames[0];
+            // const worksheet = workbook.Sheets["Locations"];
+            // const jsonData = XLSX.utils.sheet_to_json(worksheet, { sheetStubs: true });
+            // console.log('jsonData', jsonData);
+
+
+
+
+            files.forEach(element => {
+                map.loadImage('data/logos50px/' + element.img, (error, image) => {
+                    if (error) throw error;
+                    // Add the image to the map style.
+                    map.addImage(element.name || element.img, image);
+                })
+            });
+
+        });
+    </script>
+
+</body>
+
+</html>

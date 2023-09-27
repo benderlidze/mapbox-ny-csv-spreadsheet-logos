@@ -66,6 +66,7 @@
                     // To add a new image to the style at runtime see
                     // https://docs.mapbox.com/mapbox-gl-js/example/add-image/
                     'icon-image': ['get', 'image'],
+                    'icon-size': 0.75,
                     'icon-allow-overlap': true,
                     'text-field': ['get', 'image'],
                     'text-font': [
@@ -76,7 +77,7 @@
                     'text-transform': 'uppercase',
                     'text-letter-spacing': 0.05,
                     'text-variable-anchor': ['left'],
-                    'text-offset': [2, 0],
+                    'text-offset': [1.75, 0],
                     'text-allow-overlap': true
                 },
                 'paint': {
@@ -86,11 +87,10 @@
                 },
             });
 
-
             const files = [
                 { name: "Beatnic", xlsx: "Beatnic.xlsx", img: "beatnic.png" },
-                { name: "Bluestone Lane", xlsx: "Bluestone Lane.xlsx", img: "bluestone lane.jpg" },
-                { name: "Cava", xlsx: "Cava.xlsx", img: "cava.jpg" },
+                { name: "Bluestone Lane", xlsx: "Bluestone Lane.xlsx", img: "bluestone lane.png" },
+                { name: "Cava", xlsx: "Cava.xlsx", img: "cava.png" },
                 { name: "Equinox", xlsx: "Equinox.xlsx", img: "equinox.png" },
                 { name: "JnJ", xlsx: "JnJ.xlsx", img: "joe and juice.png" },
                 { name: "Just Salad", xlsx: "Just Salad.xlsx", img: "just salad.png" },
@@ -167,7 +167,7 @@
 
 
             files.forEach(element => {
-                map.loadImage('data/logos50px/' + element.img, (error, image) => {
+                map.loadImage('data/logos_no_bg/' + element.img, (error, image) => {
                     if (error) throw error;
                     // Add the image to the map style.
                     map.addImage(element.name || element.img, image);

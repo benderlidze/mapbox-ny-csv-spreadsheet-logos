@@ -25,6 +25,12 @@
 </head>
 
 <body>
+    <script
+        src="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-geocoder/v5.0.0/mapbox-gl-geocoder.min.js"></script>
+    <link rel="stylesheet"
+        href="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-geocoder/v5.0.0/mapbox-gl-geocoder.css"
+        type="text/css">
+
     <div id="map"></div>
 
     <script>
@@ -36,6 +42,14 @@
             center: { lng: -74.14264105024266, lat: 40.392563464923 }, // starting position
             projection: "mercator"
         });
+
+        // Add the control to the map.
+        map.addControl(
+            new MapboxGeocoder({
+                accessToken: mapboxgl.accessToken,
+                mapboxgl: mapboxgl
+            })
+        );
 
         map.on('load', async () => {
             // Add a data source containing one point feature.
@@ -80,6 +94,12 @@
                     // 'text-halo-color': '#fff',
                     // 'text-halo-width': 2
                 },
+            });
+
+            map.on("click", "points", function (e) {
+                const coordinates = e.features[0].geometry.coordinates.slice();
+                const description = e.features[0].properties;
+                console.log('description', description);
             });
 
             const files = [
@@ -134,7 +154,7 @@
                                     coordinates: [el.Longitude, el.Latitude]
                                 },
                                 properties: {
-                                    ...el.data,
+                                    ...el,
                                     image: pins.name,
                                 }
                             }
